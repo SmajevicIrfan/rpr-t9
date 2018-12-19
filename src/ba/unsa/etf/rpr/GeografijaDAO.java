@@ -1,6 +1,5 @@
 package ba.unsa.etf.rpr;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,6 +29,31 @@ public class GeografijaDAO {
             addInitialData();
         } catch (ClassNotFoundException | SQLException | IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    Grad glavniGrad(String drzava) {
+        try {
+            PreparedStatement query = connection.prepareStatement("SELECT grad.naziv, grad.broj_stanovnika, drzava.naziv FROM grad, drzava WHERE grad.id = drzava.id AND drzava.naziv = ?");
+            query.setString(1, drzava);
+
+            final ResultSet result = query.executeQuery();
+
+            if (!result.next()) {
+                return null;
+            }
+
+            Grad res = new Grad(
+                    result.getString(1),
+                    result.getInt(2),
+                    new Drzava(result.getString(3), null)
+            );
+            res.getCountry().setCapital(res);
+
+            return res;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
