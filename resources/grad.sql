@@ -1,8 +1,6 @@
 create table if not exists grad
 (
-  id              int
-    constraint grad_pk
-      primary key,
+  id              int primary key,
   naziv           text,
   broj_stanovnika int,
   drzava          int

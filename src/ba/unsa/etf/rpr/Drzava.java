@@ -3,31 +3,34 @@ package ba.unsa.etf.rpr;
 import javafx.beans.property.SimpleStringProperty;
 
 public class Drzava {
-    private SimpleStringProperty name = new SimpleStringProperty("");
-    private Grad capital = null;
+    private SimpleStringProperty naziv = new SimpleStringProperty("");
+    private Grad glavniGrad = null;
 
-    public Drzava(String name, Grad capital) {
-        this.setName(name);
-        this.setCapital(capital);
+    public Drzava() {
     }
 
-    public String getName() {
-        return this.name.get();
+    public Drzava(String naziv, Grad glavniGrad) {
+        this.setNaziv(naziv);
+        this.setGlavniGrad(glavniGrad);
     }
 
-    public SimpleStringProperty nameProperty() {
-        return this.name;
+    public String getNaziv() {
+        return this.naziv.get();
     }
 
-    public void setName(String name) {
-        this.name.set(name);
+    public SimpleStringProperty nazivProperty() {
+        return this.naziv;
     }
 
-    public Grad getCapital() {
-        return this.capital;
+    public void setNaziv(String naziv) {
+        this.naziv.set(naziv);
     }
 
-    public void setCapital(Grad capital) {
-        this.capital = capital;
+    public Grad getGlavniGrad() {
+        return this.glavniGrad;
+    }
+
+    public void setGlavniGrad(Grad glavniGrad) {
+        this.glavniGrad = glavniGrad;
     }
 }

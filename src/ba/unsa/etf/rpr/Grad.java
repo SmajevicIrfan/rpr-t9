@@ -4,45 +4,48 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class Grad {
-    private SimpleStringProperty name = new SimpleStringProperty("");
-    private SimpleIntegerProperty population = new SimpleIntegerProperty(0);
-    private Drzava country = null;
+    private SimpleStringProperty naziv = new SimpleStringProperty("");
+    private SimpleIntegerProperty brojStanovnika = new SimpleIntegerProperty(0);
+    private Drzava drzava = null;
 
-    public Grad(String name, int population, Drzava country) {
-        this.setName(name);
-        this.setPopulation(population);
-        this.setCountry(country);
+    public Grad() {
     }
 
-    public String getName() {
-        return this.name.get();
+    public Grad(String naziv, int brojStanovnika, Drzava drzava) {
+        this.setNaziv(naziv);
+        this.setBrojStanovnika(brojStanovnika);
+        this.setDrzava(drzava);
     }
 
-    public SimpleStringProperty nameProperty() {
-        return this.name;
+    public String getNaziv() {
+        return this.naziv.get();
     }
 
-    public void setName(String name) {
-        this.name.set(name);
+    public SimpleStringProperty nazivProperty() {
+        return this.naziv;
     }
 
-    public int getPopulation() {
-        return this.population.get();
+    public void setNaziv(String naziv) {
+        this.naziv.set(naziv);
     }
 
-    public SimpleIntegerProperty populationProperty() {
-        return this.population;
+    public int getBrojStanovnika() {
+        return this.brojStanovnika.get();
     }
 
-    public void setPopulation(int population) {
-        this.population.set(population);
+    public SimpleIntegerProperty brojStanovnikaProperty() {
+        return this.brojStanovnika;
     }
 
-    public Drzava getCountry() {
-        return this.country;
+    public void setBrojStanovnika(int brojStanovnika) {
+        this.brojStanovnika.set(brojStanovnika);
     }
 
-    public void setCountry(Drzava country) {
-        this.country = country;
+    public Drzava getDrzava() {
+        return this.drzava;
+    }
+
+    public void setDrzava(Drzava drzava) {
+        this.drzava = drzava;
     }
 }
