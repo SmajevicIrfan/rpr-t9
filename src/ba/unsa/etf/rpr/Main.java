@@ -1,6 +1,7 @@
 package ba.unsa.etf.rpr;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class Main {
@@ -33,6 +34,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        System.out.println(Locale.getDefault());
+
         System.out.println(" -- Opcije -----------------");
         System.out.println("01. Ispiši sve gradove");
         System.out.println("02. Ispiši glavne gradove");
