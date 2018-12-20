@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class Grad {
+    private int id;
     private SimpleStringProperty naziv = new SimpleStringProperty("");
     private SimpleIntegerProperty brojStanovnika = new SimpleIntegerProperty(0);
     private Drzava drzava = null;
@@ -11,10 +12,19 @@ public class Grad {
     public Grad() {
     }
 
-    public Grad(String naziv, int brojStanovnika, Drzava drzava) {
+    public Grad(int id, String naziv, int brojStanovnika, Drzava drzava) {
+        this.setId(id);
         this.setNaziv(naziv);
         this.setBrojStanovnika(brojStanovnika);
         this.setDrzava(drzava);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getNaziv() {
