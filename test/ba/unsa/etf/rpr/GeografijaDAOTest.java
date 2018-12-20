@@ -80,8 +80,8 @@ class GeografijaDAOTest {
         sarajevo.setDrzava(bih);
 
         GeografijaDAO dao = GeografijaDAO.getInstance();
-        dao.dodajGrad(sarajevo);
         dao.dodajDrzavu(bih);
+        dao.dodajGrad(sarajevo);
 
         // Provjera
         Grad proba = dao.glavniGrad("Bosna i Hercegovina");

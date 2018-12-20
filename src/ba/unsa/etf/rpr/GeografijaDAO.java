@@ -43,7 +43,7 @@ public class GeografijaDAO {
 
     public Grad glavniGrad(String drzava) {
         try {
-            PreparedStatement query = connection.prepareStatement("SELECT grad.naziv, grad.broj_stanovnika, drzava.naziv FROM grad, drzava WHERE grad.id = drzava.id AND drzava.naziv = ?");
+            PreparedStatement query = connection.prepareStatement("SELECT grad.naziv, grad.broj_stanovnika, drzava.naziv FROM grad, drzava WHERE grad.id = drzava.glavni_grad AND drzava.naziv = ?");
             query.setString(1, drzava);
 
             final ResultSet result = query.executeQuery();
@@ -122,7 +122,15 @@ public class GeografijaDAO {
 
     public void dodajGrad(Grad grad) {
         try {
-            PreparedStatement cityAdditionQuery = connection.prepareStatement("INSERT INTO grad (naziv, broj_stanovnika, drzava) VALUES (?, ?, ?)");
+            // Test if already exists
+            PreparedStatement alreadyExisting = connection.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
+            alreadyExisting.setString(1, grad.getNaziv());
+            final ResultSet existing = alreadyExisting.executeQuery();
+            if (existing.next()) {
+                return;
+            }
+
+            PreparedStatement cityAdditionQuery = connection.prepareStatement("INSERT INTO grad VALUES (null, ?, ?, ?)");
             cityAdditionQuery.setString(1, grad.getNaziv());
             cityAdditionQuery.setInt(2, grad.getBrojStanovnika());
 
@@ -135,14 +143,23 @@ public class GeografijaDAO {
             PreparedStatement countryIDQuery = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
             countryIDQuery.setString(1, grad.getDrzava().getNaziv());
 
-            final ResultSet result = countryIDQuery.executeQuery();
-            if (result.next()) {
-                cityAdditionQuery.setInt(3, result.getInt(1));
-            } else {
+            ResultSet result = countryIDQuery.executeQuery();
+            if (!result.next()) {
                 cityAdditionQuery.setNull(3, Types.INTEGER);
-            }
+                cityAdditionQuery.executeUpdate();
 
-            cityAdditionQuery.executeUpdate();
+                dodajDrzavu(grad.getDrzava());
+
+                result = countryIDQuery.executeQuery();
+
+                PreparedStatement capitalUpdateQuery = connection.prepareStatement("UPDATE grad SET drzava = ? WHERE naziv = ?");
+                capitalUpdateQuery.setInt(1, result.getInt(1));
+                capitalUpdateQuery.setString(2, grad.getNaziv());
+                capitalUpdateQuery.executeUpdate();
+            } else {
+                cityAdditionQuery.setInt(3, result.getInt(1));
+                cityAdditionQuery.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -150,7 +167,15 @@ public class GeografijaDAO {
 
     public void dodajDrzavu(Drzava drzava) {
         try {
-            PreparedStatement countryAdditionQuery = connection.prepareStatement("INSERT INTO drzava (naziv, glavni_grad) VALUES (?, ?)");
+            // Test if already exists
+            PreparedStatement alreadyExisting = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
+            alreadyExisting.setString(1, drzava.getNaziv());
+            final ResultSet existing = alreadyExisting.executeQuery();
+            if (existing.next()) {
+                return;
+            }
+
+            PreparedStatement countryAdditionQuery = connection.prepareStatement("INSERT INTO drzava VALUES (null, ?, ?)");
             countryAdditionQuery.setString(1, drzava.getNaziv());
 
             if (drzava.getGlavniGrad() == null) {
@@ -162,14 +187,23 @@ public class GeografijaDAO {
             PreparedStatement cityIDQuery = connection.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
             cityIDQuery.setString(1, drzava.getGlavniGrad().getNaziv());
 
-            final ResultSet result = cityIDQuery.executeQuery();
-            if (result.next()) {
-                countryAdditionQuery.setInt(2, result.getInt(1));
-            } else {
+            ResultSet result = cityIDQuery.executeQuery();
+            if (!result.next()) {
                 countryAdditionQuery.setNull(2, Types.INTEGER);
-            }
+                countryAdditionQuery.executeUpdate();
 
-            countryAdditionQuery.executeUpdate();
+                dodajGrad(drzava.getGlavniGrad());
+
+                result = cityIDQuery.executeQuery();
+
+                PreparedStatement capitalUpdateQuery = connection.prepareStatement("UPDATE drzava SET glavni_grad = ? WHERE naziv = ?");
+                capitalUpdateQuery.setInt(1, result.getInt(1));
+                capitalUpdateQuery.setString(2, drzava.getNaziv());
+                capitalUpdateQuery.executeUpdate();
+            } else {
+                countryAdditionQuery.setInt(2, result.getInt(1));
+                countryAdditionQuery.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
