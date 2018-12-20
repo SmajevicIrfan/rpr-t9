@@ -58,4 +58,9 @@ public class Grad {
     public void setDrzava(Drzava drzava) {
         this.drzava = drzava;
     }
+
+    @Override
+    public String toString() {
+        return this.getNaziv() + " (" + this.getDrzava() + ") - " + this.getBrojStanovnika();
+    }
 }

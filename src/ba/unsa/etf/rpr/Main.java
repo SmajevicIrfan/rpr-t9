@@ -4,23 +4,48 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
-        GeografijaDAO dao = GeografijaDAO.getInstance();
+    static String ispisiGradove() {
+        GeografijaDAO instance = GeografijaDAO.getInstance();
+        final ArrayList<Grad> cities = instance.gradovi();
 
-        Drzava ujedinjeno_kraljevstvo = dao.nadjiDrzavu("Ujedinjeno Kraljevstvo");
-        Grad grad = new Grad();
-        grad.setNaziv("Bristol");
-        grad.setBrojStanovnika(459300);
-        grad.setDrzava(ujedinjeno_kraljevstvo);
-        dao.dodajGrad(grad);
-
-        final ArrayList<Grad> gradovi = dao.gradovi();
-
-        for (Grad city : gradovi) {
-            System.out.println(city.getNaziv());
+        StringBuilder result = new StringBuilder();
+        for (Grad city : cities) {
+            result.append(city);
+            result.append("\n");
         }
 
-        //System.out.println("Gradovi su:\n" + ispisiGradove());
-        //glavniGrad();
+        return result.toString();
+    }
+
+    static void glavniGrad() {
+        GeografijaDAO instance = GeografijaDAO.getInstance();
+
+        Scanner input = new Scanner(System.in);
+        System.out.print("Unesite ime drzave: ");
+        String country = input.nextLine().trim();
+
+        Grad capital = instance.glavniGrad(country);
+        if (capital != null) {
+            System.out.println(String.format("Glavni grad države %s je %s", country, capital.getNaziv()));
+        } else {
+            System.out.println("Nepostojeća država");
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(" -- Opcije -----------------");
+        System.out.println("01. Ispiši sve gradove");
+        System.out.println("02. Ispiši glavne gradove");
+        System.out.println();
+
+        Scanner input = new Scanner(System.in);
+        System.out.print("Unesite Vaš izbor: ");
+        int option = input.nextInt();
+
+        if (option == 1) {
+            System.out.println(ispisiGradove());
+        } else {
+            glavniGrad();
+        }
     }
 }

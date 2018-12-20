@@ -1,4 +1,4 @@
-/*package ba.unsa.etf.rpr;
+package ba.unsa.etf.rpr;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,4 +14,4 @@ class MainTest {
                 "Graz (Austrija) - 280200\n";
         assertEquals(expected, result);
     }
-}*/
+}

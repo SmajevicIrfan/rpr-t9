@@ -273,7 +273,7 @@ public class GeografijaDAO {
 
         if (!statement.executeQuery("SELECT * FROM drzava").next()) {
             statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (1, 'Francuska', 1)");
-            statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (2, 'Ujedinjeno Kraljevstvo', 2)");
+            statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (2, 'Velika Britanija', 2)");
             statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (3, 'Austrija', 3)");
         }
 
