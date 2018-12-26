@@ -8,8 +8,21 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class GeografijaDAO {
-    private static GeografijaDAO instance = new GeografijaDAO();
+    private static GeografijaDAO instance = null;
     private static Connection connection;
+
+    private static Statement statement;
+    private static PreparedStatement countryAndCapitalQuery;
+    private static PreparedStatement cityAndCountryQuery;
+    private static PreparedStatement queryForCountryID;
+    private static PreparedStatement queryForCityID;
+    private static PreparedStatement alreadyExistsCity;
+    private static PreparedStatement alreadyExistsCountry;
+    private static PreparedStatement cityAdditionQuery;
+    private static PreparedStatement countryAdditionQuery;
+    private static PreparedStatement countryCapitalUpdateQuery;
+    private static PreparedStatement capitalCountryUpdateQuery;
+    private static PreparedStatement cityModificationQuery;
 
     public static GeografijaDAO getInstance() {
         if (instance == null) {
@@ -21,6 +34,13 @@ public class GeografijaDAO {
 
     public static void removeInstance() {
         instance = null;
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            System.out.println("Nothing to close");
+        }
     }
 
     private GeografijaDAO() {
@@ -31,11 +51,26 @@ public class GeografijaDAO {
             Class.forName("org.sqlite.JDBC");
             connection = DriverManager.getConnection("jdbc:sqlite:baza.db");
 
-            Statement statement = connection.createStatement();
+            statement = connection.createStatement();
             statement.execute(gradCreationQuery);
             statement.execute(drzavaCreationQuery);
 
             addInitialData();
+
+            /*
+             * Prepared statements
+             */
+            countryAndCapitalQuery = connection.prepareStatement("SELECT drzava.id, grad.id, grad.naziv, grad.broj_stanovnika FROM drzava, grad WHERE drzava.glavni_grad = grad.id AND drzava.naziv = ?");
+            cityAndCountryQuery = connection.prepareStatement("SELECT grad.id, grad.naziv, grad.broj_stanovnika, drzava.id, drzava.naziv FROM grad, drzava WHERE grad.id = drzava.glavni_grad AND drzava.naziv = ?");
+            queryForCountryID = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
+            queryForCityID = connection.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
+            alreadyExistsCity = connection.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
+            alreadyExistsCountry = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
+            cityAdditionQuery = connection.prepareStatement("INSERT INTO grad VALUES (null, ?, ?, ?)");
+            countryAdditionQuery = connection.prepareStatement("INSERT INTO drzava VALUES (null, ?, ?)");
+            countryCapitalUpdateQuery = connection.prepareStatement("UPDATE grad SET drzava = ? WHERE naziv = ?");
+            capitalCountryUpdateQuery = connection.prepareStatement("UPDATE drzava SET glavni_grad = ? WHERE naziv = ?");
+            cityModificationQuery = connection.prepareStatement("UPDATE grad SET naziv = ?, broj_stanovnika = ? WHERE id = ?");
         } catch (ClassNotFoundException | SQLException | IOException e) {
             e.printStackTrace();
         }
@@ -43,10 +78,9 @@ public class GeografijaDAO {
 
     public Grad glavniGrad(String drzava) {
         try {
-            PreparedStatement query = connection.prepareStatement("SELECT grad.id, grad.naziv, grad.broj_stanovnika, drzava.id, drzava.naziv FROM grad, drzava WHERE grad.id = drzava.glavni_grad AND drzava.naziv = ?");
-            query.setString(1, drzava);
+            cityAndCountryQuery.setString(1, drzava);
 
-            final ResultSet result = query.executeQuery();
+            final ResultSet result = cityAndCountryQuery.executeQuery();
 
             if (!result.next()) {
                 return null;
@@ -72,7 +106,6 @@ public class GeografijaDAO {
 
     public void obrisiDrzavu(String drzava) {
         try {
-            PreparedStatement queryForCountryID = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
             queryForCountryID.setString(1, drzava);
 
             final ResultSet result = queryForCountryID.executeQuery();
@@ -81,7 +114,6 @@ public class GeografijaDAO {
                 return;
             }
 
-            Statement statement = connection.createStatement();
             statement.executeUpdate("DELETE FROM grad WHERE drzava = " + result.getInt(1));
             statement.executeUpdate("DELETE FROM drzava WHERE id = " + result.getInt(1));
         } catch (SQLException e) {
@@ -91,31 +123,24 @@ public class GeografijaDAO {
 
     public ArrayList<Grad> gradovi() {
         try {
-            Statement cityQuery = connection.createStatement();
-            final ResultSet result = cityQuery.executeQuery("SELECT id, naziv, broj_stanovnika, drzava FROM grad ORDER BY broj_stanovnika DESC");
+            final ResultSet result = statement.executeQuery("SELECT g.id, g.naziv, g.broj_stanovnika, d.id, d.naziv, gg.id, gg.naziv, gg.broj_stanovnika FROM grad g, drzava d, grad gg WHERE g.drzava = d.id AND d.glavni_grad = gg.id ORDER BY g.broj_stanovnika DESC");
 
             ArrayList<Grad> returnValue = new ArrayList<>();
 
             while (result.next()) {
-                Statement countryQuery = connection.createStatement();
-                final ResultSet country = countryQuery.executeQuery("SELECT drzava.id, drzava.naziv, grad.id, grad.naziv, grad.broj_stanovnika FROM drzava, grad WHERE drzava.glavni_grad = grad.id AND drzava.id = " + result.getInt(4));
-                if (!country.next()) {
-                    continue;
-                }
-
                 Grad newCity = new Grad(
                         result.getInt(1),
                         result.getString(2),
                         result.getInt(3),
                         new Drzava(
-                                country.getInt(1),
-                                country.getString(2),
+                                result.getInt(4),
+                                result.getString(5),
                                 null)
                 );
                 newCity.getDrzava().setGlavniGrad(new Grad(
-                        country.getInt(3),
-                        country.getString(4),
-                        country.getInt(5),
+                        result.getInt(6),
+                        result.getString(7),
+                        result.getInt(8),
                         newCity.getDrzava()
                 ));
 
@@ -131,16 +156,9 @@ public class GeografijaDAO {
 
     public void dodajGrad(Grad grad) {
         try {
-            // Test if already exists
-            PreparedStatement alreadyExisting = connection.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
-            alreadyExisting.setString(1, grad.getNaziv());
-            final ResultSet existing = alreadyExisting.executeQuery();
-            if (existing.next()) {
+            if (setIfNotExists(alreadyExistsCity, cityAdditionQuery, grad.getNaziv()))  {
                 return;
             }
-
-            PreparedStatement cityAdditionQuery = connection.prepareStatement("INSERT INTO grad VALUES (null, ?, ?, ?)");
-            cityAdditionQuery.setString(1, grad.getNaziv());
             cityAdditionQuery.setInt(2, grad.getBrojStanovnika());
 
             if (grad.getDrzava() == null) {
@@ -149,22 +167,20 @@ public class GeografijaDAO {
                 return;
             }
 
-            PreparedStatement countryIDQuery = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
-            countryIDQuery.setString(1, grad.getDrzava().getNaziv());
+            queryForCountryID.setString(1, grad.getDrzava().getNaziv());
 
-            ResultSet result = countryIDQuery.executeQuery();
+            ResultSet result = queryForCountryID.executeQuery();
             if (!result.next()) {
                 cityAdditionQuery.setNull(3, Types.INTEGER);
                 cityAdditionQuery.executeUpdate();
 
                 dodajDrzavu(grad.getDrzava());
 
-                result = countryIDQuery.executeQuery();
+                result = queryForCountryID.executeQuery();
 
-                PreparedStatement capitalUpdateQuery = connection.prepareStatement("UPDATE grad SET drzava = ? WHERE naziv = ?");
-                capitalUpdateQuery.setInt(1, result.getInt(1));
-                capitalUpdateQuery.setString(2, grad.getNaziv());
-                capitalUpdateQuery.executeUpdate();
+                countryCapitalUpdateQuery.setInt(1, result.getInt(1));
+                countryCapitalUpdateQuery.setString(2, grad.getNaziv());
+                countryCapitalUpdateQuery.executeUpdate();
             } else {
                 cityAdditionQuery.setInt(3, result.getInt(1));
                 cityAdditionQuery.executeUpdate();
@@ -176,16 +192,9 @@ public class GeografijaDAO {
 
     public void dodajDrzavu(Drzava drzava) {
         try {
-            // Test if already exists
-            PreparedStatement alreadyExisting = connection.prepareStatement("SELECT id FROM drzava WHERE naziv = ?");
-            alreadyExisting.setString(1, drzava.getNaziv());
-            final ResultSet existing = alreadyExisting.executeQuery();
-            if (existing.next()) {
+            if (setIfNotExists(alreadyExistsCountry, countryAdditionQuery, drzava.getNaziv())) {
                 return;
             }
-
-            PreparedStatement countryAdditionQuery = connection.prepareStatement("INSERT INTO drzava VALUES (null, ?, ?)");
-            countryAdditionQuery.setString(1, drzava.getNaziv());
 
             if (drzava.getGlavniGrad() == null) {
                 countryAdditionQuery.setNull(2, Types.INTEGER);
@@ -193,22 +202,20 @@ public class GeografijaDAO {
                 return;
             }
 
-            PreparedStatement cityIDQuery = connection.prepareStatement("SELECT id FROM grad WHERE naziv = ?");
-            cityIDQuery.setString(1, drzava.getGlavniGrad().getNaziv());
+            queryForCityID.setString(1, drzava.getGlavniGrad().getNaziv());
 
-            ResultSet result = cityIDQuery.executeQuery();
+            ResultSet result = queryForCityID.executeQuery();
             if (!result.next()) {
                 countryAdditionQuery.setNull(2, Types.INTEGER);
                 countryAdditionQuery.executeUpdate();
 
                 dodajGrad(drzava.getGlavniGrad());
 
-                result = cityIDQuery.executeQuery();
+                result = queryForCityID.executeQuery();
 
-                PreparedStatement capitalUpdateQuery = connection.prepareStatement("UPDATE drzava SET glavni_grad = ? WHERE naziv = ?");
-                capitalUpdateQuery.setInt(1, result.getInt(1));
-                capitalUpdateQuery.setString(2, drzava.getNaziv());
-                capitalUpdateQuery.executeUpdate();
+                capitalCountryUpdateQuery.setInt(1, result.getInt(1));
+                capitalCountryUpdateQuery.setString(2, drzava.getNaziv());
+                capitalCountryUpdateQuery.executeUpdate();
             } else {
                 countryAdditionQuery.setInt(2, result.getInt(1));
                 countryAdditionQuery.executeUpdate();
@@ -220,7 +227,6 @@ public class GeografijaDAO {
 
     public void izmijeniGrad(Grad grad) {
         try {
-            PreparedStatement cityModificationQuery = connection.prepareStatement("UPDATE grad SET naziv = ?, broj_stanovnika = ? WHERE id = ?");
             cityModificationQuery.setString(1, grad.getNaziv());
             cityModificationQuery.setInt(2, grad.getBrojStanovnika());
             cityModificationQuery.setInt(3, grad.getId());
@@ -233,10 +239,9 @@ public class GeografijaDAO {
 
     public Drzava nadjiDrzavu(String drzava) {
         try {
-            PreparedStatement query = connection.prepareStatement("SELECT drzava.id, grad.id, grad.naziv, grad.broj_stanovnika FROM drzava, grad WHERE drzava.glavni_grad = grad.id AND drzava.naziv = ?");
-            query.setString(1, drzava);
+            countryAndCapitalQuery.setString(1, drzava);
 
-            final ResultSet result = query.executeQuery();
+            final ResultSet result = countryAndCapitalQuery.executeQuery();
             if (!result.next()) {
                 return null;
             }
@@ -260,15 +265,24 @@ public class GeografijaDAO {
         }
     }
 
-    private void addInitialData() throws SQLException {
-        Statement statement = connection.createStatement();
+    private boolean setIfNotExists(PreparedStatement alreadyExistsQuery, PreparedStatement additionQuery, String naziv) throws SQLException {
+        alreadyExistsQuery.setString(1, naziv);
+        final ResultSet existing = alreadyExistsQuery.executeQuery();
+        if (existing.next()) {
+            return true;
+        }
 
+        additionQuery.setString(1, naziv);
+        return false;
+    }
+
+    private void addInitialData() throws SQLException {
         if (!statement.executeQuery("SELECT * FROM grad").next()) {
-            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (1, 'Pariz', 2206488, NULL)");
-            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (2, 'London', 8825000, NULL)");
-            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (3, 'Beč', 1899055, NULL)");
-            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (4, 'Manchester', 545500, NULL)");
-            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (5, 'Graz', 280200, NULL)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (1, 'Pariz', 2206488, 1)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (2, 'London', 8825000, 2)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (3, 'Beč', 1899055, 3)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (4, 'Manchester', 545500, 2)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (5, 'Graz', 280200, 3)");
         }
 
         if (!statement.executeQuery("SELECT * FROM drzava").next()) {
@@ -276,11 +290,5 @@ public class GeografijaDAO {
             statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (2, 'Velika Britanija', 2)");
             statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (3, 'Austrija', 3)");
         }
-
-        statement.executeUpdate("UPDATE grad SET drzava = 1 WHERE naziv = 'Pariz'");
-        statement.executeUpdate("UPDATE grad SET drzava = 2 WHERE naziv = 'London'");
-        statement.executeUpdate("UPDATE grad SET drzava = 3 WHERE naziv = 'Beč'");
-        statement.executeUpdate("UPDATE grad SET drzava = 2 WHERE naziv = 'Manchester'");
-        statement.executeUpdate("UPDATE grad SET drzava = 3 WHERE naziv = 'Graz'");
     }
 }
