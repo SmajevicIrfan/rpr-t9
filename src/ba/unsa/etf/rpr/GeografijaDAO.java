@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class GeografijaDAO {
     private static GeografijaDAO instance = new GeografijaDAO();
@@ -26,19 +25,18 @@ public class GeografijaDAO {
 
     private GeografijaDAO() {
         try {
-            Scanner input = new Scanner(System.in);
+            String gradCreationQuery = new String(Files.readAllBytes(Paths.get("resources/grad.sql")), StandardCharsets.UTF_8);
+            String drzavaCreationQuery = new String(Files.readAllBytes(Paths.get("resources/drzava.sql")), StandardCharsets.UTF_8);
 
-            System.out.print("Unesite korisničko ime za bazu podataka: ");
-            String username = input.next();
+            Class.forName("org.sqlite.JDBC");
+            connection = DriverManager.getConnection("jdbc:sqlite:baza.db");
 
-            System.out.print("Unesite lozinku za bazu podataka: ");
-            String password = input.next();
+            Statement statement = connection.createStatement();
+            statement.execute(gradCreationQuery);
+            statement.execute(drzavaCreationQuery);
 
-            Class.forName("oracle.jdbc.driver.OracleDriver");
-            connection = DriverManager.getConnection("jdbc:oracle:thin:@ora.db.lab.ri.etf.unsa.ba:1521:etflab", username, password);
-
-            //addInitialData();
-        } catch (ClassNotFoundException | SQLException e) {
+            addInitialData();
+        } catch (ClassNotFoundException | SQLException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -265,18 +263,19 @@ public class GeografijaDAO {
     private void addInitialData() throws SQLException {
         Statement statement = connection.createStatement();
 
-        statement.executeQuery("DELETE FROM GRAD");
-        statement.executeQuery("DELETE FROM DRZAVA");
+        if (!statement.executeQuery("SELECT * FROM grad").next()) {
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (1, 'Pariz', 2206488, NULL)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (2, 'London', 8825000, NULL)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (3, 'Beč', 1899055, NULL)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (4, 'Manchester', 545500, NULL)");
+            statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (5, 'Graz', 280200, NULL)");
+        }
 
-        statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (1, 'Pariz', 2206488, NULL)");
-        statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (2, 'London', 8825000, NULL)");
-        statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (3, 'Beč', 1899055, NULL)");
-        statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (4, 'Manchester', 545500, NULL)");
-        statement.executeUpdate("INSERT INTO grad (id, naziv, broj_stanovnika, drzava) VALUES (5, 'Graz', 280200, NULL)");
-
-        statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (1, 'Francuska', 1)");
-        statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (2, 'Velika Britanija', 2)");
-        statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (3, 'Austrija', 3)");
+        if (!statement.executeQuery("SELECT * FROM drzava").next()) {
+            statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (1, 'Francuska', 1)");
+            statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (2, 'Velika Britanija', 2)");
+            statement.executeUpdate("INSERT INTO drzava (id, naziv, glavni_grad) VALUES (3, 'Austrija', 3)");
+        }
 
         statement.executeUpdate("UPDATE grad SET drzava = 1 WHERE naziv = 'Pariz'");
         statement.executeUpdate("UPDATE grad SET drzava = 2 WHERE naziv = 'London'");
