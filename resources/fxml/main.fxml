@@ -13,7 +13,7 @@
    <children>
       <VBox>
          <children>
-            <Label text="Sistem za menadžment geografskih lokacija">
+            <Label fx:id="title" text="Sistem za menadžment geografskih lokacija">
                <font>
                   <Font size="24.0" />
                </font>
@@ -38,7 +38,7 @@
             <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
          </padding>
          <children>
-            <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Ispiši sve gradove" GridPane.columnSpan="2" />
+            <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#displayAllCities" text="Ispiši sve gradove" GridPane.columnSpan="2" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Dodaj državu" GridPane.rowIndex="1" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Dodaj grad" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Nađi državu" GridPane.rowIndex="2" />
