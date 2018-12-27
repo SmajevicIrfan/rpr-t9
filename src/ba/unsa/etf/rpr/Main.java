@@ -1,9 +1,15 @@
 package ba.unsa.etf.rpr;
 
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class Main {
+public class Main extends Application {
     static String ispisiGradove() {
         GeografijaDAO instance = GeografijaDAO.getInstance();
         final ArrayList<Grad> cities = instance.gradovi();
@@ -33,19 +39,16 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        System.out.println(" -- Opcije -----------------");
-        System.out.println("01. Ispiši sve gradove");
-        System.out.println("02. Ispiši glavne gradove");
-        System.out.println();
+        launch(args);
+    }
 
-        Scanner input = new Scanner(System.in);
-        System.out.print("Unesite Vaš izbor: ");
-        int option = input.nextInt();
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
+        primaryStage.setTitle("Geografija");
 
-        if (option == 1) {
-            System.out.println(ispisiGradove());
-        } else {
-            glavniGrad();
-        }
+        primaryStage.setScene(new Scene(root));
+
+        primaryStage.show();
     }
 }
