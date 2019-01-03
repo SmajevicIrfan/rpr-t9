@@ -41,7 +41,7 @@
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#displayAllCities" text="Ispiši sve gradove" GridPane.columnSpan="2" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Dodaj državu" GridPane.rowIndex="1" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Dodaj grad" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Nađi državu" GridPane.rowIndex="2" />
+            <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#findCountry" text="Nađi državu" GridPane.rowIndex="2" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Izmijeni grad" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Obriši državu" GridPane.rowIndex="3" />
             <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Ispiši glavne gradove" GridPane.columnIndex="1" GridPane.rowIndex="3" />
